@@ -20,12 +20,15 @@ EMBED_MODEL = "text-embedding-ada-002"
 
 # --- INITIALIZATION ---
 openai.api_key = OPENAI_API_KEY
-pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
 
-# Create or connect to Pinecone index
-if PINECONE_INDEX_NAME not in pinecone.list_indexes():
-    pinecone.create_index(PINECONE_INDEX_NAME, dimension=1536)
-index = pinecone.Index(PINECONE_INDEX_NAME)
+pinecone_client = pinecone.Pinecone(api_key=PINECONE_API_KEY)
+
+# Check if the index exists
+if PINECONE_INDEX_NAME not in [index.name for index in pinecone_client.list_indexes()]:
+    pinecone_client.create_index(name=PINECONE_INDEX_NAME, dimension=1536)
+
+# Connect to index
+index = pinecone_client.Index(PINECONE_INDEX_NAME)
 
 # --- HELPER FUNCTIONS ---
 
