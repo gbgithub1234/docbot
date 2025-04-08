@@ -30,11 +30,14 @@ def load_docx(file: BytesIO):
     doc = Document(file)
     return [para.text for para in doc.paragraphs if para.text.strip()]
 
-def split_text(texts, chunk_size=500):
+def split_text(texts, chunk_size=1000, chunk_overlap=100):
     chunks = []
     for text in texts:
-        for i in range(0, len(text), chunk_size):
-            chunks.append(text[i:i+chunk_size])
+        start = 0
+        while start < len(text):
+            end = start + chunk_size
+            chunks.append(text[start:end])
+            start += chunk_size - chunk_overlap
     return chunks
 
 def embed_texts(texts):
@@ -45,9 +48,12 @@ def embed_texts(texts):
     embeddings = [d.embedding for d in response.data]
     return embeddings
 
-def store_embeddings(texts, embeddings, source_name):
+def store_embeddings(texts, embeddings, source_name, batch_size=50):
     ids = [str(uuid4()) for _ in embeddings]
-    metadata = [{"source": source_name} for _ in texts]  # ⬅️ Only small metadata now
+    metadata = [
+        {"source": source_name, "text": text[:1000]}  # Save first 1000 characters in metadata
+        for text in texts
+    ]
     vectors = [
         {
             "id": id_,
@@ -56,7 +62,11 @@ def store_embeddings(texts, embeddings, source_name):
         }
         for id_, embedding, meta in zip(ids, embeddings, metadata)
     ]
-    index.upsert(vectors=vectors)
+
+    # Batch upserts to avoid payload errors
+    for i in range(0, len(vectors), batch_size):
+        batch = vectors[i:i+batch_size]
+        index.upsert(vectors=batch)
 
 def retrieve_contexts(query, top_k=5):
     query_embed = openai.embeddings.create(
@@ -65,13 +75,11 @@ def retrieve_contexts(query, top_k=5):
     ).data[0].embedding
 
     results = index.query(vector=query_embed, top_k=top_k, include_metadata=True)
-    # ⚠️ Now we can't pull large text from metadata — only from similarity match
-    # We'll assume that semantic search pulls good context.
-    contexts = [f"Source: {match.metadata.get('source', 'Unknown')}" for match in results.matches]
+    contexts = [match.metadata.get('text', '') for match in results.matches if 'text' in match.metadata]
     return contexts
 
 def generate_answer(contexts, query):
-    context_text = "\n".join(contexts)
+    context_text = "\n---\n".join(contexts)
     prompt = f"Use the following context to answer the question.\nContext:\n{context_text}\n\nQuestion: {query}\nAnswer:"
     
     completion = openai.chat.completions.create(
@@ -115,6 +123,6 @@ if query:
         st.write("### Answer:")
         st.write(answer)
 
-        with st.expander("See sources"):
+        with st.expander("See retrieved document sections"):
             for i, context in enumerate(contexts):
-                st.write(f"**Match {i+1}:**\n{context}")
+                st.write(f"**Section {i+1}:**\n{context}")
