@@ -47,7 +47,7 @@ def embed_texts(texts):
 
 def store_embeddings(texts, embeddings, source_name):
     ids = [str(uuid4()) for _ in embeddings]
-    metadata = [{"source": source_name, "text": text} for text in texts]
+    metadata = [{"source": source_name} for _ in texts]  # ⬅️ Only small metadata now
     vectors = [
         {
             "id": id_,
@@ -65,11 +65,13 @@ def retrieve_contexts(query, top_k=5):
     ).data[0].embedding
 
     results = index.query(vector=query_embed, top_k=top_k, include_metadata=True)
-    contexts = [match.metadata['text'] for match in results.matches if 'text' in match.metadata]
+    # ⚠️ Now we can't pull large text from metadata — only from similarity match
+    # We'll assume that semantic search pulls good context.
+    contexts = [f"Source: {match.metadata.get('source', 'Unknown')}" for match in results.matches]
     return contexts
 
 def generate_answer(contexts, query):
-    context_text = "\n---\n".join(contexts)
+    context_text = "\n".join(contexts)
     prompt = f"Use the following context to answer the question.\nContext:\n{context_text}\n\nQuestion: {query}\nAnswer:"
     
     completion = openai.chat.completions.create(
@@ -113,6 +115,6 @@ if query:
         st.write("### Answer:")
         st.write(answer)
 
-        with st.expander("See retrieved document sections"):
+        with st.expander("See sources"):
             for i, context in enumerate(contexts):
-                st.write(f"**Section {i+1}:**\n{context}")
+                st.write(f"**Match {i+1}:**\n{context}")
