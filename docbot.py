@@ -25,10 +25,7 @@ EMBED_MODEL = "text-embedding-ada-002"
 
 def load_pdf(file: BytesIO):
     reader = PdfReader(file)
-    text = []
-    for page in reader.pages:
-        text.append(page.extract_text())
-    return text
+    return [page.extract_text() for page in reader.pages]
 
 def load_docx(file: BytesIO):
     doc = Document(file)
@@ -46,7 +43,7 @@ def embed_texts(texts):
         input=texts,
         model=EMBED_MODEL
     )
-    embeddings = [d['embedding'] for d in response['data']]
+    embeddings = [d.embedding for d in response.data]
     return embeddings
 
 def store_embeddings(texts, embeddings, source_name):
@@ -55,7 +52,28 @@ def store_embeddings(texts, embeddings, source_name):
     to_upsert = list(zip(ids, embeddings, metadata))
     index.upsert(vectors=to_upsert)
 
+def retrieve_contexts(query, top_k=5):
+    query_embed = openai.embeddings.create(
+        input=[query],
+        model=EMBED_MODEL
+    ).data[0].embedding
+
+    results = index.query(vector=query_embed, top_k=top_k, include_metadata=True)
+    contexts = [match.metadata['text'] for match in results.matches if 'text' in match.metadata]
+    return contexts
+
+def generate_answer(contexts, query):
+    context_text = "\n---\n".join(contexts)
+    prompt = f"Use the following context to answer the question.\nContext:\n{context_text}\n\nQuestion: {query}\nAnswer:"
+    
+    completion = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return completion.choices[0].message.content
+
 # --- STREAMLIT APP ---
+
 st.set_page_config(page_title="DocBot", layout="wide")
 st.title("📄 DocBot - Smart Document Search")
 
@@ -83,23 +101,8 @@ query = st.text_input("Ask a question about your documents:")
 
 if query:
     with st.spinner("Searching for answers..."):
-        # Embed query
-        query_embed = openai.embeddings.create(input=[query], model=EMBED_MODEL)['data'][0]['embedding']
-
-        # Query Pinecone
-        results = index.query(vector=query_embed, top_k=5, include_metadata=True)
-
-        # Build context
-        contexts = [match['metadata']['text'] for match in results['matches'] if 'text' in match['metadata']]
-        context_text = "\n---\n".join(contexts)
-
-        # Ask LLM
-        prompt = f"Use the following context to answer the question.\nContext:\n{context_text}\n\nQuestion: {query}\nAnswer:"
-        completion = openai.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        answer = completion.choices[0].message.content
+        contexts = retrieve_contexts(query)
+        answer = generate_answer(contexts, query)
 
         st.write("### Answer:")
         st.write(answer)
