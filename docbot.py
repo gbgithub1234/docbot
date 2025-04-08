@@ -4,53 +4,44 @@ import streamlit as st
 import openai
 import pinecone
 import pandas as pd
-import os
-from typing import List
-from uuid import uuid4
 from io import BytesIO
 from PyPDF2 import PdfReader
 from docx import Document
+from uuid import uuid4
 
-# --- CONFIGURATION ---
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV = os.getenv("PINECONE_ENV")
-PINECONE_INDEX_NAME = "docbot-index"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-EMBED_MODEL = "text-embedding-ada-002"
+# --- LOAD SECRETS ---
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
+PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 
 # --- INITIALIZATION ---
 openai.api_key = OPENAI_API_KEY
-
 pinecone_client = pinecone.Pinecone(api_key=PINECONE_API_KEY)
-
-# Check if the index exists
-if PINECONE_INDEX_NAME not in [index.name for index in pinecone_client.list_indexes()]:
-    pinecone_client.create_index(name=PINECONE_INDEX_NAME, dimension=1536)
-
-# Connect to index
 index = pinecone_client.Index(PINECONE_INDEX_NAME)
+
+EMBED_MODEL = "text-embedding-ada-002"
 
 # --- HELPER FUNCTIONS ---
 
-def load_pdf(file: BytesIO) -> List[str]:
+def load_pdf(file: BytesIO):
     reader = PdfReader(file)
     text = []
     for page in reader.pages:
         text.append(page.extract_text())
     return text
 
-def load_docx(file: BytesIO) -> List[str]:
+def load_docx(file: BytesIO):
     doc = Document(file)
     return [para.text for para in doc.paragraphs if para.text.strip()]
 
-def split_text(texts: List[str], chunk_size: int = 500) -> List[str]:
+def split_text(texts, chunk_size=500):
     chunks = []
     for text in texts:
         for i in range(0, len(text), chunk_size):
             chunks.append(text[i:i+chunk_size])
     return chunks
 
-def embed_texts(texts: List[str]) -> List[List[float]]:
+def embed_texts(texts):
     response = openai.embeddings.create(
         input=texts,
         model=EMBED_MODEL
@@ -58,7 +49,7 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
     embeddings = [d['embedding'] for d in response['data']]
     return embeddings
 
-def store_embeddings(texts: List[str], embeddings: List[List[float]], source_name: str):
+def store_embeddings(texts, embeddings, source_name):
     ids = [str(uuid4()) for _ in embeddings]
     metadata = [{"source": source_name, "text": text} for text in texts]
     to_upsert = list(zip(ids, embeddings, metadata))
