@@ -3,7 +3,6 @@
 import streamlit as st
 import openai
 import pinecone
-import pandas as pd
 from io import BytesIO
 from PyPDF2 import PdfReader
 from docx import Document
@@ -49,8 +48,15 @@ def embed_texts(texts):
 def store_embeddings(texts, embeddings, source_name):
     ids = [str(uuid4()) for _ in embeddings]
     metadata = [{"source": source_name, "text": text} for text in texts]
-    to_upsert = list(zip(ids, embeddings, metadata))
-    index.upsert(vectors=to_upsert)
+    vectors = [
+        {
+            "id": id_,
+            "values": embedding,
+            "metadata": meta
+        }
+        for id_, embedding, meta in zip(ids, embeddings, metadata)
+    ]
+    index.upsert(vectors=vectors)
 
 def retrieve_contexts(query, top_k=5):
     query_embed = openai.embeddings.create(
