@@ -1,0 +1,11 @@
+# Core requirements (from SARA)
+streamlit==1.44.1
+openai==1.70.0
+sqlalchemy==2.0.40
+pymysql==1.0.3
+pandas==2.2.3
+
+# Additional requirements for Docbot
+pinecone-client==3.0.2
+PyPDF2==3.0.1
+python-docx==1.1.0
