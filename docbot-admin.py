@@ -143,7 +143,7 @@ if isinstance(uploaded_files, list) and uploaded_files:
             try:
                 index.delete(filter={"source": {"$eq": selected_file}})
                 st.success(f"✅ Deleted all vectors for '{selected_file}' successfully.")
-                st.experimental_rerun()  # Refresh the page to update file list
+                st.rerun() # Refresh the page to update file list
             except Exception as e:
                 st.error(f"Error deleting vectors: {e}")
 else:
