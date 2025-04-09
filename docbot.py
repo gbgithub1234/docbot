@@ -191,8 +191,15 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
                 try:
                     index.delete(filter={"source": {"$eq": selected_file}})
                     st.success(f"✅ Deleted all vectors for '{selected_file}'.")
+
+                    # 🛠 NEW: Safely reset search state BEFORE rerun
+                    if "query" in st.session_state:
+                        del st.session_state["query"]
+                    if "upload_complete" in st.session_state:
+                        del st.session_state["upload_complete"]
+
                     st.session_state.delete_triggered = True
-                    st.experimental_rerun()
+                    st.rerun()  # ✅ Correct function
                 except Exception as e:
                     st.error(f"Error deleting vectors: {e}")
     else:
