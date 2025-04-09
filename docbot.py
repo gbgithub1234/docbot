@@ -41,26 +41,42 @@ def split_text(texts, chunk_size=1000, chunk_overlap=100):
     return chunks
 
 def embed_texts(texts):
+    # Filter out empty texts before sending to OpenAI
+    clean_texts = [text for text in texts if text.strip()]
+    if not clean_texts:
+        return [], []
+    
     response = openai.embeddings.create(
-        input=texts,
+        input=clean_texts,
         model=EMBED_MODEL
     )
     embeddings = [d.embedding for d in response.data]
-    return embeddings
+    return clean_texts, embeddings
 
 def store_embeddings(texts, embeddings, source_name, batch_size=50):
-    ids = [str(uuid4()) for _ in embeddings]
-    metadata = [
-        {"source": source_name, "text": text[:1000]}  # Save first 1000 characters in metadata
-        for text in texts
-    ]
+    ids = []
+    safe_embeddings = []
+    safe_metadata = []
+
+    for text, embedding in zip(texts, embeddings):
+        if text.strip() == "":
+            continue
+        if not embedding or any(e is None for e in embedding):
+            continue
+        ids.append(str(uuid4()))
+        safe_embeddings.append(embedding)
+        safe_metadata.append({
+            "source": source_name,
+            "text": text[:1000]  # Save first 1000 characters
+        })
+
     vectors = [
         {
             "id": id_,
             "values": embedding,
             "metadata": meta
         }
-        for id_, embedding, meta in zip(ids, embeddings, metadata)
+        for id_, embedding, meta in zip(ids, safe_embeddings, safe_metadata)
     ]
 
     # Batch upserts
@@ -90,7 +106,6 @@ def generate_answer(contexts, query):
 
 def view_all_vectors():
     try:
-        # Search with a random dummy vector to pull everything (brute force way)
         dummy_vector = [0.0] * 1536
         results = index.query(vector=dummy_vector, top_k=100, include_metadata=True, include_values=False)
         vectors_info = [
@@ -123,10 +138,12 @@ if uploaded_file:
             st.stop()
 
         chunks = split_text(texts)
-        embeddings = embed_texts(chunks)
-        store_embeddings(chunks, embeddings, uploaded_file.name)
-
-    st.success(f"Uploaded and indexed: {uploaded_file.name}")
+        clean_texts, embeddings = embed_texts(chunks)
+        if clean_texts and embeddings:
+            store_embeddings(clean_texts, embeddings, uploaded_file.name)
+            st.success(f"Uploaded and indexed: {uploaded_file.name}")
+        else:
+            st.error("No valid text to embed from the uploaded document.")
 
 # Ask a question
 query = st.text_input("Ask a question about your documents:")
