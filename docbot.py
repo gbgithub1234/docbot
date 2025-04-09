@@ -34,6 +34,7 @@ def load_docx(file: BytesIO):
 def split_text(texts, chunk_size=1000, chunk_overlap=100):
     chunks = []
     for text in texts:
+        text = text.strip()
         if len(text) <= chunk_size:
             chunks.append(text)
         else:
