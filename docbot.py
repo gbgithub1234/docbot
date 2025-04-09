@@ -198,14 +198,14 @@ if query:
 st.markdown("---")
 
 # ------------------------------------------
-# Sidebar: Uploaded Files (expand/collapse with full vector metadata)
+# Sidebar: Uploaded Files (simple file list, expanded by default)
 # ------------------------------------------
 
-def get_full_vector_info():
+def get_uploaded_files():
     try:
         stats = index.describe_index_stats()
         total_vectors = stats['total_vector_count']
-
+        
         if total_vectors == 0:
             return []
 
@@ -217,28 +217,30 @@ def get_full_vector_info():
             include_values=False
         )
 
-        return results.matches  # return full match objects
+        files = set()
+        for match in results.matches:
+            if 'source' in match.metadata:
+                files.add(match.metadata['source'])
+        return sorted(list(files))
     except Exception as e:
-        return f"Error retrieving full vectors: {e}"
+        return f"Error retrieving uploaded files: {e}"
 
-# Fetch full vectors
-full_vectors = get_full_vector_info()
+# Fetch files first
+uploaded_files = get_uploaded_files()
 
 # Sidebar layout
-vector_count = len(full_vectors) if isinstance(full_vectors, list) else 0
-with st.sidebar.expander(f"📄 Uploaded Files ({vector_count})", expanded=False):
+file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
+with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):  # expanded=True now
     st.subheader("Uploaded Files")
 
-    if isinstance(full_vectors, str):
-        st.error(full_vectors)
-    elif full_vectors:
-        for match in full_vectors:
-            st.json({
-                "id": match.id,
-                "metadata": match.metadata
-            })
+    if isinstance(uploaded_files, str):
+        st.error(uploaded_files)
+    elif uploaded_files:
+        for file in uploaded_files:
+            st.markdown(f"- {file}")
     else:
-        st.info("No vectors found.")
+        st.info("No files found.")
+
 
 
 
