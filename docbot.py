@@ -198,21 +198,21 @@ if query:
 st.markdown("---")
 
 # View vectors button
-if st.button("🔍 View Test Case Vectors"):
-    with st.spinner("Retrieving stored vector metadata..."):
-        vectors_info = view_all_vectors()
-        if isinstance(vectors_info, str):
-            st.error(f"Error: {vectors_info}")
-        else:
-            st.write("### Stored Vectors Info:")
-            for v in vectors_info:
-                st.json(v)
+# if st.button("🔍 View Test Case Vectors"):
+#     with st.spinner("Retrieving stored vector metadata..."):
+#         vectors_info = view_all_vectors()
+#         if isinstance(vectors_info, str):
+#             st.error(f"Error: {vectors_info}")
+#         else:
+#             st.write("### Stored Vectors Info:")
+#             for v in vectors_info:
+#                 st.json(v)
 
 # Delete all vectors button
-if st.button("🗑️ Delete All Vectors"):
-    with st.spinner("Deleting all vectors..."):
-        result = delete_all_vectors()
-        if "successfully" in result:
-            st.success(result)
-        else:
-            st.error(result)
+# if st.button("🗑️ Delete All Vectors"):
+#     with st.spinner("Deleting all vectors..."):
+#         result = delete_all_vectors()
+#         if "successfully" in result:
+#             st.success(result)
+#         else:
+#             st.error(result)
