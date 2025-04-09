@@ -111,7 +111,7 @@ def get_uploaded_files():
 
 st.set_page_config(page_title="DocBot", layout="wide")
 
-# --- TOP EXPANDER ---
+# --- Top Info ---
 with st.expander("Show/hide details"):
     st.write("""
     - created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
@@ -123,16 +123,10 @@ with st.expander("Show/hide details"):
 
 st.header("SFU Document Chatbot 2.0 (beta)")
 
-# --- SESSION FLAGS ---
-if "upload_complete" not in st.session_state:
-    st.session_state.upload_complete = False
-if "delete_triggered" not in st.session_state:
-    st.session_state.delete_triggered = False
-
-# --- FILE UPLOAD ---
+# --- Upload Section ---
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
-if uploaded_file and not st.session_state.upload_complete:
+if uploaded_file:
     with st.spinner(f"Uploading and processing '{uploaded_file.name}'... Please wait."):
         try:
             texts = load_pdf(uploaded_file) if uploaded_file.name.endswith(".pdf") else load_docx(uploaded_file)
@@ -141,20 +135,23 @@ if uploaded_file and not st.session_state.upload_complete:
             if clean_texts and embeddings:
                 store_embeddings(clean_texts, embeddings, uploaded_file.name)
                 st.success(f"✅ '{uploaded_file.name}' uploaded and indexed!")
-                st.session_state.upload_complete = True
+                st.experimental_rerun()
             else:
-                st.error("⚠️ No valid text extracted from the uploaded document.")
+                st.error("⚠️ No valid text extracted.")
         except Exception as e:
             st.error(f"Error during upload: {e}")
 
-# --- QUESTION INPUT ---
-query = st.text_input("Ask a question about your documents:")
+# --- Search Section (Controlled by button) ---
+st.markdown("---")
 
-if query and not st.session_state.delete_triggered:
+search_query = st.text_input("Ask a question about your documents:", key="search_query")
+search_button = st.button("🔎 Run Search")
+
+if search_button and search_query.strip() != "":
     with st.spinner("Searching for answers..."):
-        contexts = retrieve_contexts(query)
+        contexts = retrieve_contexts(search_query)
         if contexts:
-            answer = generate_answer(contexts, query)
+            answer = generate_answer(contexts, search_query)
             st.write("### Answer:")
             st.write(answer)
 
@@ -164,35 +161,31 @@ if query and not st.session_state.delete_triggered:
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first.")
 
-st.markdown("---")
-
-# --- SIDEBAR FILES & DELETE ---
-uploaded_files = get_uploaded_files()
-file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
-
-with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
+# --- Sidebar: Uploaded Files + Delete ---
+with st.sidebar.expander(f"📄 Uploaded Files", expanded=True):
     st.subheader("Uploaded Files")
+    uploaded_files = get_uploaded_files()
+
     if isinstance(uploaded_files, str):
         st.error(uploaded_files)
     elif uploaded_files:
         for file in uploaded_files:
             st.markdown(f"- {file}")
     else:
-        st.info("No files found.")
+        st.info("No files uploaded.")
 
     st.markdown("---")
     st.subheader("🗑️ Delete Uploaded File")
 
-    if isinstance(uploaded_files, list) and uploaded_files:
+    if uploaded_files:
         selected_file = st.selectbox("Select a file to delete:", uploaded_files, key="delete_file")
 
         if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete"):
             with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
                 try:
                     index.delete(filter={"source": {"$eq": selected_file}})
-                    st.session_state.delete_triggered = True
-                    st.success(f"✅ Deleted all vectors for '{selected_file}'.")
-                    st.rerun()
+                    st.success(f"✅ Deleted '{selected_file}'. Refreshing...")
+                    st.experimental_rerun()
                 except Exception as e:
                     st.error(f"Error deleting vectors: {e}")
     else:
