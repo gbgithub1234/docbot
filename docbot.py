@@ -123,7 +123,7 @@ if query:
             })
 
             # Refresh the page to show latest history
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
