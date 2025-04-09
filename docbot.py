@@ -197,6 +197,40 @@ if query:
 # --- EXTRA TOOLS ---
 st.markdown("---")
 
+# ------------------------------------------
+# Sidebar: Uploaded Files (expand/collapse with file count)
+# ------------------------------------------
+
+def get_uploaded_files():
+    try:
+        dummy_vector = [0.0] * 1536
+        results = index.query(vector=dummy_vector, top_k=100, include_metadata=True, include_values=False)
+        files = set()
+        for match in results.matches:
+            if 'source' in match.metadata:
+                files.add(match.metadata['source'])
+        return sorted(list(files))
+    except Exception as e:
+        return f"Error retrieving uploaded files: {e}"
+
+# Fetch files first
+uploaded_files = get_uploaded_files()
+
+# Sidebar layout
+file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
+with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=False):
+    st.subheader("Uploaded Files")
+
+    if isinstance(uploaded_files, str):
+        st.error(uploaded_files)
+    elif uploaded_files:
+        for file in uploaded_files:
+            st.markdown(f"- {file}")
+    else:
+        st.info("No files found.")
+
+
+
 # View vectors button
 # if st.button("🔍 View Test Case Vectors"):
 #     with st.spinner("Retrieving stored vector metadata..."):
