@@ -122,10 +122,13 @@ if query:
                 "sources": sorted(set(sources))
             })
 
-            # Refresh the page to show latest history
+            # 🛑 Clear the query so it doesn't resubmit on rerun
+            st.session_state["query"] = ""
+
             st.rerun()
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
+
 
 # --- Sidebar: Uploaded Files ---
 uploaded_files = get_uploaded_files()
