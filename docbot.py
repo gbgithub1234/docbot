@@ -1,5 +1,3 @@
-# docbot.py
-
 import streamlit as st
 import openai
 import pinecone
@@ -107,29 +105,33 @@ def get_uploaded_files():
     except Exception as e:
         return f"Error retrieving uploaded files: {e}"
 
-# --- STREAMLIT APP ---
+# --- STREAMLIT APP SETUP ---
 
 st.set_page_config(page_title="DocBot", layout="wide")
 
-# Top introduction
+# Handle delete-triggered rerun reset
+if st.session_state.get("delete_triggered", False):
+    st.session_state.delete_triggered = False
+    st.session_state.query = ""
+    st.session_state.upload_complete = False
+
+# Top Introduction
 with st.expander("Show/hide details"):
     st.write("""
     - created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
-    - PROBLEM: document-based information is located in many places taking time to find
-    - SOLUTION: provide a one-stop shopping resource for all document-based information
-    - Leverages AI and [Pinecone vector storage](https://www.pinecone.io/)
-    - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
+    - PROBLEM: Document-based information is scattered across locations.
+    - SOLUTION: Provide a single smart search for documents.
+    - Powered by [Pinecone vector storage](https://www.pinecone.io/)
+    - [Access sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
     """)
 
 st.header("SFU Document Chatbot 2.0 (beta)")
 
-# Initialize session state flags
+# Session state initialization
 if "upload_complete" not in st.session_state:
     st.session_state.upload_complete = False
-if "delete_triggered" not in st.session_state:
-    st.session_state.delete_triggered = False
 
-# --- File upload ---
+# --- File Upload ---
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
 if uploaded_file and not st.session_state.upload_complete:
@@ -147,9 +149,8 @@ if uploaded_file and not st.session_state.upload_complete:
         except Exception as e:
             st.error(f"Error during upload: {e}")
 
-# --- Question box ---
+# --- Ask a Question ---
 query = st.text_input("Ask a question about your documents:", key="query")
-
 
 if query:
     with st.spinner("Searching for answers..."):
@@ -166,7 +167,6 @@ if query:
 st.markdown("---")
 
 # --- Sidebar: Uploaded Files + Delete ---
-
 uploaded_files = get_uploaded_files()
 file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
 
@@ -190,15 +190,10 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
             with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
                 try:
                     index.delete(filter={"source": {"$eq": selected_file}})
+                    st.success(f"✅ Deleted all vectors for '{selected_file}'.")
                     st.session_state.delete_triggered = True
+                    st.experimental_rerun()
                 except Exception as e:
                     st.error(f"Error deleting vectors: {e}")
     else:
         st.info("No files available to delete.")
-
-# After delete, reset query and rerun
-if st.session_state.delete_triggered:
-    st.session_state.delete_triggered = False
-    st.session_state.pop("query", None)  # <-- safer way
-    st.rerun()
-
