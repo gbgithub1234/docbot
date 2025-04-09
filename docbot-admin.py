@@ -118,7 +118,7 @@ if uploaded_file:
 
 st.markdown("---")
 
-# --- Uploaded Files with Delete Option ---
+# --- Uploaded Files with Immediate Delete ---
 st.header("📋 Uploaded Files")
 
 uploaded_files = get_uploaded_files()
@@ -127,18 +127,18 @@ if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
     for file in uploaded_files:
-        col1, col2 = st.columns([0.85, 0.15])  # Wider column for file name, small for button
+        col1, col2 = st.columns([0.1, 0.9])  # Make columns tighter
         with col1:
-            st.markdown(f"- {file}")
+            delete_key = f"delete_{file}"
+            if st.button("❌", key=delete_key):
+                try:
+                    index.delete(filter={"source": {"$eq": file}})
+                    st.success(f"✅ Deleted '{file}' successfully.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error deleting file: {e}")
         with col2:
-            if st.button("❌", key=f"delete_{file}"):
-                if st.confirm(f"Are you sure you want to delete '{file}'?"):
-                    with st.spinner(f"Deleting '{file}'..."):
-                        try:
-                            index.delete(filter={"source": {"$eq": file}})
-                            st.success(f"✅ Deleted '{file}' successfully.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error deleting '{file}': {e}")
+            st.markdown(file)
 else:
     st.info("No files found.")
+
