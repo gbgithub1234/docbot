@@ -135,6 +135,9 @@ def delete_all_vectors():
 st.set_page_config(page_title="DocBot", layout="wide")
 #st.title("📄 DocBot - Smart Document Search")
 
+url = "https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7"
+url2 = "https://www.pinecone.io/"
+
 multiline_str1 = """
 
 - created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca) \n
