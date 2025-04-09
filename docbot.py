@@ -203,8 +203,22 @@ st.markdown("---")
 
 def get_uploaded_files():
     try:
+        stats = index.describe_index_stats()
+        total_vectors = stats['total_vector_count']
+        
+        if total_vectors == 0:
+            return []
+
+        # To retrieve all vectors properly, you can paginate queries
+        # For now we use a dummy vector and request top_k = total_vectors
         dummy_vector = [0.0] * 1536
-        results = index.query(vector=dummy_vector, top_k=100, include_metadata=True, include_values=False)
+        results = index.query(
+            vector=dummy_vector,
+            top_k=min(total_vectors, 1000),  # max 1000 at once (Pinecone limit)
+            include_metadata=True,
+            include_values=False
+        )
+
         files = set()
         for match in results.matches:
             if 'source' in match.metadata:
@@ -212,6 +226,7 @@ def get_uploaded_files():
         return sorted(list(files))
     except Exception as e:
         return f"Error retrieving uploaded files: {e}"
+
 
 # Fetch files first
 uploaded_files = get_uploaded_files()
