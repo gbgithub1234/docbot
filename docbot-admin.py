@@ -110,7 +110,6 @@ if uploaded_file:
             if clean_texts and embeddings:
                 store_embeddings(clean_texts, embeddings, uploaded_file.name)
                 st.success(f"✅ '{uploaded_file.name}' uploaded and indexed successfully!")
-                st.rerun()  # Refresh immediately
             else:
                 st.error("⚠️ No valid text extracted from the uploaded document.")
         except Exception as e:
@@ -118,7 +117,7 @@ if uploaded_file:
 
 st.markdown("---")
 
-# --- Uploaded Files with Immediate Delete ---
+# --- Uploaded Files List ---
 st.header("📋 Uploaded Files")
 
 uploaded_files = get_uploaded_files()
@@ -127,18 +126,26 @@ if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
     for file in uploaded_files:
-        col1, col2 = st.columns([0.1, 0.9])  # Make columns tighter
-        with col1:
-            delete_key = f"delete_{file}"
-            if st.button("❌", key=delete_key):
-                try:
-                    index.delete(filter={"source": {"$eq": file}})
-                    st.success(f"✅ Deleted '{file}' successfully.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error deleting file: {e}")
-        with col2:
-            st.markdown(file)
+        st.markdown(f"- {file}")
 else:
     st.info("No files found.")
+
+st.markdown("---")
+
+# --- Delete Document Section ---
+st.header("🗑️ Delete a Document")
+
+if isinstance(uploaded_files, list) and uploaded_files:
+    selected_file = st.selectbox("Select a file to delete:", uploaded_files, key="delete_file")
+
+    if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete"):
+        with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
+            try:
+                index.delete(filter={"source": {"$eq": selected_file}})
+                st.success(f"✅ Deleted all vectors for '{selected_file}' successfully.")
+                st.rerun() # Refresh the page to update file list
+            except Exception as e:
+                st.error(f"Error deleting vectors: {e}")
+else:
+    st.info("No files available to delete.")
 
