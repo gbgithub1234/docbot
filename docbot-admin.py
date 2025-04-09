@@ -125,8 +125,8 @@ uploaded_files = get_uploaded_files()
 if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
-    for file in uploaded_files:
-        st.markdown(f"- {file}")
+    for file in sorted(uploaded_files):
+        st.sidebar.markdown(f"- {file}")
 else:
     st.info("No files found.")
 
