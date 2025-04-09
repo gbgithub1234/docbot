@@ -77,21 +77,28 @@ with st.expander("Show/hide details"):
 st.header("SFU Document Chatbot 2.0 (beta)")
 
 # --- Question Box ---
-st.markdown("**Press ENTER or click the Search button below** 👇")
 
 # Input box
 query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question...")
 
-# Autofocus trick
+# Move instruction BELOW input
+st.caption("👉 Press ENTER or click the Search button.")
+
+# Auto-focus (delayed to make it reliable)
 st.markdown("""
     <script>
-        const inputField = window.parent.document.querySelector('input[data-testid="stTextInput-user_query"]');
-        if (inputField) {inputField.focus();}
+    window.addEventListener('DOMContentLoaded', (event) => {
+        setTimeout(function() {
+            const inputField = window.parent.document.querySelector('input[data-testid="stTextInput-user_query"]');
+            if (inputField) {inputField.focus();}
+        }, 150);
+    });
     </script>
 """, unsafe_allow_html=True)
 
 # Button
 search_button = st.button("🔍 Search")
+
 
 
 # Unified search trigger: either pressing Enter OR clicking the button
