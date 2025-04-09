@@ -122,13 +122,17 @@ st.header("📋 Uploaded Files")
 
 uploaded_files = get_uploaded_files()
 
+if isinstance(uploaded_files, list):
+    uploaded_files = sorted(uploaded_files)
+
 if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
-    for file in sorted(uploaded_files):
+    for file in uploaded_files:
         st.sidebar.markdown(f"- {file}")
 else:
     st.info("No files found.")
+
 
 st.markdown("---")
 
