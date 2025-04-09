@@ -79,11 +79,15 @@ st.header("SFU Document Chatbot 2.0 (beta)")
 # --- Question Box ---
 st.markdown("**Press ENTER or click the Search button below** 👇")
 
+# Input box
 query = st.text_input("Ask a question about your documents:", key="user_query")
+
+# Button
 search_button = st.button("🔍 Search")
 
-if query and (search_button or st.session_state.get("user_query_submit", False)):
-    st.session_state["user_query_submit"] = False  # reset after processing
+# If user entered a query AND either pressed Enter or clicked the button
+if (query and search_button) or (query and not search_button and st.session_state.get("search_triggered") is None):
+    st.session_state["search_triggered"] = True  # Mark that we already triggered once
 
     with st.spinner("Searching for answers..."):
         contexts, sources = retrieve_contexts(query)
@@ -102,9 +106,10 @@ if query and (search_button or st.session_state.get("user_query_submit", False))
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
-# Support "press Enter" behavior
-if query and not search_button:
-    st.session_state["user_query_submit"] = True
+# Reset trigger if button pressed manually
+if search_button:
+    st.session_state["search_triggered"] = None
+
 
 
 # --- Sidebar: Uploaded Files ---
