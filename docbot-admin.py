@@ -126,7 +126,7 @@ if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
     for file in uploaded_files:
-        col1, col2 = st.columns([0.1, 0.9])  # Smaller column for the ❌
+        col1, col2 = st.columns([0.05, 0.95])  # Even tighter space for the ❌
         with col1:
             if st.button("❌", key=f"delete_{file}"):
                 with st.spinner(f"Deleting '{file}'..."):
