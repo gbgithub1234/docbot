@@ -287,12 +287,16 @@ if isinstance(uploaded_files, list) and uploaded_files:
                     filter={"source": {"$eq": selected_file}}
                 )
                 st.success(f"Deleted all vectors for '{selected_file}' successfully.")
-
+    
                 # Silent sidebar refresh
                 uploaded_files = refresh_uploaded_files()
+    
+                # Rerun app quickly to fully update UI
+                st.experimental_rerun()
 
-            except Exception as e:
-                st.error(f"Error deleting vectors: {e}")
+        except Exception as e:
+            st.error(f"Error deleting vectors: {e}")
+
 else:
     st.info("No files available to delete.")
 
