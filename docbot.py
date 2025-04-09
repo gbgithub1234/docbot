@@ -199,6 +199,6 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
 # After delete, reset query and rerun
 if st.session_state.delete_triggered:
     st.session_state.delete_triggered = False
-    if "query" in st.session_state:
-        st.session_state.query = ""
+    st.session_state.pop("query", None)  # <-- safer way
     st.rerun()
+
