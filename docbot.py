@@ -292,7 +292,7 @@ if isinstance(uploaded_files, list) and uploaded_files:
                 uploaded_files = refresh_uploaded_files()
     
                 # (NEW) Force sidebar + page to refresh
-                st.experimental_rerun()
+                st.rerun()
     
             except Exception as e:
                 st.error(f"Error deleting vectors: {e}")
