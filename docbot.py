@@ -150,6 +150,7 @@ if uploaded_file and not st.session_state.upload_complete:
 # --- Question box ---
 query = st.text_input("Ask a question about your documents:", key="query")
 
+
 if query:
     with st.spinner("Searching for answers..."):
         contexts = retrieve_contexts(query)
