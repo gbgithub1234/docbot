@@ -82,7 +82,8 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
     # Batch upserts
     for i in range(0, len(vectors), batch_size):
         batch = vectors[i:i+batch_size]
-        index.upsert(vectors=batch)
+        index.upsert(vectors=batch, namespace="")  # <-- ADD namespace=""
+
 
 def retrieve_contexts(query, top_k=10):
     query_embed = openai.embeddings.create(
