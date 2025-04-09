@@ -243,6 +243,58 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True): 
         st.info("No files found.")
 
 
+# ------------------------------------------
+# Delete a specific uploaded file
+# ------------------------------------------
+
+st.markdown("---")
+st.subheader("🗑️ Delete Uploaded File")
+
+# Function to refresh uploaded files manually
+def refresh_uploaded_files():
+    try:
+        stats = index.describe_index_stats()
+        total_vectors = stats['total_vector_count']
+        
+        if total_vectors == 0:
+            return []
+
+        dummy_vector = [0.0] * 1536
+        results = index.query(
+            vector=dummy_vector,
+            top_k=min(total_vectors, 5000),  # same large top_k as before
+            include_metadata=True,
+            include_values=False
+        )
+
+        files = set()
+        for match in results.matches:
+            if 'source' in match.metadata:
+                files.add(match.metadata['source'])
+        return sorted(list(files))
+    except Exception as e:
+        return f"Error refreshing uploaded files: {e}"
+
+# Deleting logic
+if isinstance(uploaded_files, list) and uploaded_files:
+    selected_file = st.selectbox("Select a file to delete:", uploaded_files)
+
+    if st.button(f"Confirm Delete '{selected_file}'"):
+        with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
+            try:
+                # Delete vectors with matching 'source'
+                index.delete(
+                    filter={"source": {"$eq": selected_file}}
+                )
+                st.success(f"Deleted all vectors for '{selected_file}' successfully.")
+
+                # Silent sidebar refresh
+                uploaded_files = refresh_uploaded_files()
+
+            except Exception as e:
+                st.error(f"Error deleting vectors: {e}")
+else:
+    st.info("No files available to delete.")
 
 
 
