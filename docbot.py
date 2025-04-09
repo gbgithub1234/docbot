@@ -133,7 +133,27 @@ def delete_all_vectors():
 # --- STREAMLIT APP ---
 
 st.set_page_config(page_title="DocBot", layout="wide")
-st.title("📄 DocBot - Smart Document Search")
+#st.title("📄 DocBot - Smart Document Search")
+
+multiline_str1 = """
+
+- created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca) \n
+
+- PROBLEM: document-based information is located in many places taking time to find\n
+
+- SOLUTION: provide a one-stop shopping resource for all document-based information\n
+
+- leverages AI and [Pinecone vector storage](%s) """ % url2
+
+multiline_str2 = """to access these [sample documents](%s)""" % url
+multiline_str3 ="""\n - sample prompt: 'How can I create a marketing effort?' \n"""
+
+with st.expander("Show/hide details"):
+    st.write(multiline_str1 + multiline_str2 + multiline_str3)
+
+#------------------------------------------
+st.header("SFU Document Chatbot 2.0 (beta)")
+
 
 # Upload document
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
