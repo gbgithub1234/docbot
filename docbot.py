@@ -106,34 +106,31 @@ else:
 st.markdown("---")
 
 # --- Question box ---
-st.text_input("Ask a question about your uploaded documents:", key="user_query")
+user_query = st.text_input("Ask a question about your uploaded documents:", key="user_query")
 
-if st.session_state.get("user_query"):  # Only proceed if there's a non-empty input
+if user_query:
     with st.spinner("Searching for answers..."):
-        query = st.session_state["user_query"]
-        contexts, sources = retrieve_contexts(query)
+        contexts, sources = retrieve_contexts(user_query)
 
         if contexts:
-            answer = generate_answer(contexts, query)
+            answer = generate_answer(contexts, user_query)
 
             # Save the chat into history
             st.session_state.chat_history.append({
-                "user": query,
+                "user": user_query,
                 "bot": answer,
                 "sources": sorted(set(sources))
             })
 
-            # 🛑 Clear the input box
+            # Clear input after processing
             st.session_state["user_query"] = ""
 
+            # Rerun to refresh chat history
             st.rerun()
-
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
-            # Even if no docs found, clear input
             st.session_state["user_query"] = ""
-
-
+            st.rerun()
 
 # --- Sidebar: Uploaded Files ---
 uploaded_files = get_uploaded_files()
