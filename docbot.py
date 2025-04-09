@@ -111,7 +111,7 @@ def get_uploaded_files():
 
 st.set_page_config(page_title="DocBot", layout="wide")
 
-# Top introduction
+# --- TOP EXPANDER ---
 with st.expander("Show/hide details"):
     st.write("""
     - created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
@@ -123,15 +123,13 @@ with st.expander("Show/hide details"):
 
 st.header("SFU Document Chatbot 2.0 (beta)")
 
-# Initialize session state flags
+# --- SESSION FLAGS ---
 if "upload_complete" not in st.session_state:
     st.session_state.upload_complete = False
 if "delete_triggered" not in st.session_state:
     st.session_state.delete_triggered = False
-if "query" not in st.session_state:
-    st.session_state.query = ""
 
-# --- File upload ---
+# --- FILE UPLOAD ---
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
 if uploaded_file and not st.session_state.upload_complete:
@@ -149,15 +147,13 @@ if uploaded_file and not st.session_state.upload_complete:
         except Exception as e:
             st.error(f"Error during upload: {e}")
 
-# --- Question box ---
-query = st.text_input("Ask a question about your documents:", value=st.session_state.query, key="query")
+# --- QUESTION INPUT ---
+query = st.text_input("Ask a question about your documents:")
 
-if query:
+if query and not st.session_state.delete_triggered:
     with st.spinner("Searching for answers..."):
         contexts = retrieve_contexts(query)
-        if not contexts:
-            st.warning("⚠️ No relevant documents found. Please upload documents first.")
-        else:
+        if contexts:
             answer = generate_answer(contexts, query)
             st.write("### Answer:")
             st.write(answer)
@@ -165,11 +161,12 @@ if query:
             with st.expander("See retrieved document sections"):
                 for i, context in enumerate(contexts):
                     st.write(f"**Section {i+1}:**\n{context}")
+        else:
+            st.warning("⚠️ No relevant documents found. Please upload documents first.")
 
 st.markdown("---")
 
-# --- Sidebar: Uploaded Files + Delete ---
-
+# --- SIDEBAR FILES & DELETE ---
 uploaded_files = get_uploaded_files()
 file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
 
@@ -193,15 +190,10 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
             with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
                 try:
                     index.delete(filter={"source": {"$eq": selected_file}})
-                    st.success(f"✅ Deleted all vectors for '{selected_file}'.")
                     st.session_state.delete_triggered = True
+                    st.success(f"✅ Deleted all vectors for '{selected_file}'.")
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error deleting vectors: {e}")
     else:
         st.info("No files available to delete.")
-
-# --- Handle Delete and Refresh ---
-if st.session_state.delete_triggered:
-    st.session_state.query = ""
-    st.session_state.delete_triggered = False
-    st.rerun()
