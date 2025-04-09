@@ -26,7 +26,8 @@ def retrieve_contexts(query, top_k=10):
 
     results = index.query(vector=query_embed, top_k=top_k, include_metadata=True)
     contexts = [match.metadata.get('text', '') for match in results.matches if 'text' in match.metadata]
-    return contexts
+    sources = [match.metadata.get('source', 'Unknown') for match in results.matches if 'source' in match.metadata]
+    return contexts, sources
 
 def generate_answer(contexts, query):
     context_text = "\n---\n".join(contexts)
@@ -80,7 +81,7 @@ query = st.text_input("Ask a question about your documents:")
 
 if query:
     with st.spinner("Searching for answers..."):
-        contexts = retrieve_contexts(query)
+        contexts, sources = retrieve_contexts(query)
 
         if contexts:
             answer = generate_answer(contexts, query)
@@ -88,9 +89,11 @@ if query:
             st.write("### Answer:")
             st.write(answer)
 
-            with st.expander("See retrieved document sections"):
-                for i, context in enumerate(contexts):
-                    st.write(f"**Section {i+1}:**\n{context}")
+            if sources:
+                unique_sources = sorted(set(sources))
+                st.markdown("### 📄 Sources used:")
+                for src in unique_sources:
+                    st.markdown(f"- {src}")
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
