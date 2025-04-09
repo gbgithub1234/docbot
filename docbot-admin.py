@@ -122,21 +122,13 @@ st.header("📋 Uploaded Files")
 
 uploaded_files = get_uploaded_files()
 
-if isinstance(uploaded_files, list):
-    uploaded_files = sorted(uploaded_files, key=lambda x: x.lower())
-
 if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
-    st.sidebar.title("📄 Uploaded Files")   # <-- KEEP your sidebar title here
     for file in uploaded_files:
-        st.sidebar.markdown(f"- {file}")
+        st.markdown(f"- {file}")
 else:
-    st.sidebar.title("📄 Uploaded Files")   # <-- also show title even if none found
-    st.sidebar.info("No files found.")
-
-
-
+    st.info("No files found.")
 
 st.markdown("---")
 
@@ -144,26 +136,16 @@ st.markdown("---")
 st.header("🗑️ Delete a Document")
 
 if isinstance(uploaded_files, list) and uploaded_files:
-    if "selected_file" not in st.session_state:
-        st.session_state.selected_file = uploaded_files[0]
+    selected_file = st.selectbox("Select a file to delete:", uploaded_files, key="delete_file")
 
-    selected_file = st.selectbox(
-        "Select a file to delete:",
-        uploaded_files,
-        index=uploaded_files.index(st.session_state.selected_file) if st.session_state.selected_file in uploaded_files else 0,
-        key="delete_file_select"
-    )
-
-    if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete_button"):
+    if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete"):
         with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
             try:
                 index.delete(filter={"source": {"$eq": selected_file}})
                 st.success(f"✅ Deleted all vectors for '{selected_file}' successfully.")
-                st.session_state.selected_file = None  # Clear previous selection
-                st.rerun()
+                st.rerun() # Refresh the page to update file list
             except Exception as e:
                 st.error(f"Error deleting vectors: {e}")
 else:
     st.info("No files available to delete.")
-
 
