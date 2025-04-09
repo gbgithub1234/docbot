@@ -239,8 +239,13 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=False):
     if isinstance(uploaded_files, str):
         st.error(uploaded_files)
     elif uploaded_files:
-        for file in uploaded_files:
-            st.markdown(f"- {file}")
+        
+        for match in uploaded_files:
+            st.json({
+                "id": match.id,
+                "metadata": match.metadata
+            })
+            
     else:
         st.info("No files found.")
 
