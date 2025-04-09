@@ -128,10 +128,13 @@ if isinstance(uploaded_files, list):
 if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
+    st.sidebar.title("📄 Uploaded Files")   # <-- KEEP your sidebar title here
     for file in uploaded_files:
         st.sidebar.markdown(f"- {file}")
 else:
-    st.info("No files found.")
+    st.sidebar.title("📄 Uploaded Files")   # <-- also show title even if none found
+    st.sidebar.info("No files found.")
+
 
 
 
