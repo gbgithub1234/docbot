@@ -79,7 +79,7 @@ st.header("SFU Document Chatbot 2.0 (beta)")
 # --- Question Box ---
 
 # Input box
-query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question and press ENTER or the search button...")
+query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question here and press ENTER or the search button...")
 
 # Move instruction BELOW input
 # st.caption("👉 Press ENTER or click the Search button.")
