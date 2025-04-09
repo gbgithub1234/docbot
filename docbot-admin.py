@@ -144,16 +144,26 @@ st.markdown("---")
 st.header("🗑️ Delete a Document")
 
 if isinstance(uploaded_files, list) and uploaded_files:
-    selected_file = st.selectbox("Select a file to delete:", uploaded_files, key="delete_file")
+    if "selected_file" not in st.session_state:
+        st.session_state.selected_file = uploaded_files[0]
 
-    if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete"):
+    selected_file = st.selectbox(
+        "Select a file to delete:",
+        uploaded_files,
+        index=uploaded_files.index(st.session_state.selected_file) if st.session_state.selected_file in uploaded_files else 0,
+        key="delete_file_select"
+    )
+
+    if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete_button"):
         with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
             try:
                 index.delete(filter={"source": {"$eq": selected_file}})
                 st.success(f"✅ Deleted all vectors for '{selected_file}' successfully.")
-                st.rerun() # Refresh the page to update file list
+                st.session_state.selected_file = None  # Clear previous selection
+                st.rerun()
             except Exception as e:
                 st.error(f"Error deleting vectors: {e}")
 else:
     st.info("No files available to delete.")
+
 
