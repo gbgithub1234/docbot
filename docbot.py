@@ -212,10 +212,11 @@ def get_uploaded_files():
         dummy_vector = [0.0] * 1536
         results = index.query(
             vector=dummy_vector,
-            top_k=min(total_vectors, 1000),
+            top_k=5000,  # increase top_k to 5000
             include_metadata=True,
             include_values=False
         )
+
 
         files = set()
         for match in results.matches:
