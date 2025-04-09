@@ -135,7 +135,7 @@ if uploaded_file:
             if clean_texts and embeddings:
                 store_embeddings(clean_texts, embeddings, uploaded_file.name)
                 st.success(f"✅ '{uploaded_file.name}' uploaded and indexed!")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("⚠️ No valid text extracted.")
         except Exception as e:
@@ -185,7 +185,7 @@ with st.sidebar.expander(f"📄 Uploaded Files", expanded=True):
                 try:
                     index.delete(filter={"source": {"$eq": selected_file}})
                     st.success(f"✅ Deleted '{selected_file}'. Refreshing...")
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error deleting vectors: {e}")
     else:
