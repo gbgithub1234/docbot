@@ -162,28 +162,22 @@ st.header("SFU Document Chatbot 2.0 (beta)")
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
 if uploaded_file:
-    with st.spinner(f"Uploading and processing '{uploaded_file.name}'... Please wait."):
-        try:
-            if uploaded_file.name.endswith(".pdf"):
-                texts = load_pdf(uploaded_file)
-            elif uploaded_file.name.endswith(".docx"):
-                texts = load_docx(uploaded_file)
-            else:
-                st.error("Unsupported file type.")
-                st.stop()
+    with st.spinner("Processing document..."):
+        if uploaded_file.name.endswith(".pdf"):
+            texts = load_pdf(uploaded_file)
+        elif uploaded_file.name.endswith(".docx"):
+            texts = load_docx(uploaded_file)
+        else:
+            st.error("Unsupported file type.")
+            st.stop()
 
-            chunks = split_text(texts)
-            clean_texts, embeddings = embed_texts(chunks)
-
-            if clean_texts and embeddings:
-                store_embeddings(clean_texts, embeddings, uploaded_file.name)
-                st.success(f"✅ '{uploaded_file.name}' uploaded and fully indexed! You can now search it.")
-            else:
-                st.error("⚠️ No valid text extracted from the uploaded document.")
-
-        except Exception as e:
-            st.error(f"Error during upload and ingestion: {e}")
-
+        chunks = split_text(texts)
+        clean_texts, embeddings = embed_texts(chunks)
+        if clean_texts and embeddings:
+            store_embeddings(clean_texts, embeddings, uploaded_file.name)
+            st.success(f"Uploaded and indexed: {uploaded_file.name}")
+        else:
+            st.error("No valid text to embed from the uploaded document.")
 
 # Ask a question
 query = st.text_input("Ask a question about your documents:")
@@ -293,16 +287,12 @@ if isinstance(uploaded_files, list) and uploaded_files:
                     filter={"source": {"$eq": selected_file}}
                 )
                 st.success(f"Deleted all vectors for '{selected_file}' successfully.")
-    
+
                 # Silent sidebar refresh
                 uploaded_files = refresh_uploaded_files()
-    
-                # (NEW) Force sidebar + page to refresh
-                st.rerun()
-    
+
             except Exception as e:
                 st.error(f"Error deleting vectors: {e}")
-
 else:
     st.info("No files available to delete.")
 
