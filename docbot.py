@@ -11,12 +11,13 @@ from uuid import uuid4
 # --- LOAD SECRETS ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
+PINECONE_ENVIRONMENT = st.secrets["PINECONE_ENVIRONMENT"]  # Make sure you have this secret too!
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 
 # --- INITIALIZATION ---
 openai.api_key = OPENAI_API_KEY
-pinecone_client = pinecone.Pinecone(api_key=PINECONE_API_KEY)
-index = pinecone_client.Index(PINECONE_INDEX_NAME)
+pinecone_client = pinecone.Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+index = pinecone_client.Index(PINECONE_INDEX_NAME)  # ✅ Correct for Pinecone v3
 
 EMBED_MODEL = "text-embedding-ada-002"
 
@@ -78,10 +79,10 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
         for id_, embedding, meta in zip(ids, safe_embeddings, safe_metadata)
     ]
 
-    # Batch upserts using v3 method
+    # Batch upserts using correct method
     for i in range(0, len(vectors), batch_size):
         batch = vectors[i:i+batch_size]
-        index.vectors.upsert(vectors=batch)  # ✅ Correct: use index.vectors.upsert()
+        index.upsert(vectors=batch)  # ✅ Correct: use index.upsert()
 
 def retrieve_contexts(query, top_k=10):
     query_embed = openai.embeddings.create(
