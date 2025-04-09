@@ -158,10 +158,15 @@ with st.expander("Show/hide details"):
 st.header("SFU Document Chatbot 2.0 (beta)")
 
 
+# Initialize upload complete flag
+if "upload_complete" not in st.session_state:
+    st.session_state.upload_complete = False
+
+
 # Upload document
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
-if uploaded_file:
+if uploaded_file and not st.session_state.upload_complete:
     with st.spinner(f"Uploading and processing '{uploaded_file.name}'... Please wait."):
         try:
             if uploaded_file.name.endswith(".pdf"):
@@ -178,11 +183,16 @@ if uploaded_file:
             if clean_texts and embeddings:
                 store_embeddings(clean_texts, embeddings, uploaded_file.name)
                 st.success(f"✅ '{uploaded_file.name}' uploaded and fully indexed! You can now search it.")
+
+                # ✅ Mark upload as complete
+                st.session_state.upload_complete = True
+
             else:
                 st.error("⚠️ No valid text extracted from the uploaded document.")
 
         except Exception as e:
             st.error(f"Error during upload and ingestion: {e}")
+
 
 
 # Ask a question
