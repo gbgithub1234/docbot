@@ -126,26 +126,21 @@ if isinstance(uploaded_files, str):
     st.error(uploaded_files)
 elif uploaded_files:
     for file in uploaded_files:
-        st.markdown(f"- {file}")
+        col1, col2 = st.columns([0.1, 0.9])  # Smaller column for the ❌
+        with col1:
+            if st.button("❌", key=f"delete_{file}"):
+                with st.spinner(f"Deleting '{file}'..."):
+                    try:
+                        index.delete(filter={"source": {"$eq": file}})
+                        st.success(f"✅ Deleted '{file}' successfully.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error deleting file: {e}")
+        with col2:
+            st.markdown(file)
 else:
     st.info("No files found.")
 
-st.markdown("---")
 
-# --- Delete Document Section ---
-st.header("🗑️ Delete a Document")
 
-if isinstance(uploaded_files, list) and uploaded_files:
-    selected_file = st.selectbox("Select a file to delete:", uploaded_files, key="delete_file")
-
-    if st.button(f"Confirm Delete '{selected_file}'", key="confirm_delete"):
-        with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
-            try:
-                index.delete(filter={"source": {"$eq": selected_file}})
-                st.success(f"✅ Deleted all vectors for '{selected_file}' successfully.")
-                st.rerun() # Refresh the page to update file list
-            except Exception as e:
-                st.error(f"Error deleting vectors: {e}")
-else:
-    st.info("No files available to delete.")
 
