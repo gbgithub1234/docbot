@@ -83,7 +83,6 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
         for id_, embedding, meta in zip(ids, safe_embeddings, safe_metadata)
     ]
 
-    # Batch upserts
     for i in range(0, len(vectors), batch_size):
         batch = vectors[i:i+batch_size]
         index.upsert(vectors=batch)
@@ -95,15 +94,16 @@ def retrieve_contexts(query, top_k=10):
     ).data[0].embedding
 
     results = index.query(vector=query_embed, top_k=top_k, include_metadata=True)
-    contexts = [match.metadata.get('text', '') for match in results.matches if 'text' in match.metadata]
-
-    # ✅ Only return contexts if relevant matches were found
-    if len(contexts) == 0:
-        return None
-
-    return contexts
+    if results.matches:
+        contexts = [match.metadata.get('text', '') for match in results.matches if 'text' in match.metadata]
+        return contexts
+    else:
+        return []  # 🔥 Fix: no results → no hallucination
 
 def generate_answer(contexts, query):
+    if not contexts:
+        return "⚠️ No relevant documents found. Please upload documents first."
+
     context_text = "\n---\n".join(contexts)
     prompt = f"Use the following context to answer the question.\nContext:\n{context_text}\n\nQuestion: {query}\nAnswer:"
     
@@ -116,11 +116,8 @@ def generate_answer(contexts, query):
 def get_uploaded_files():
     try:
         stats = index.describe_index_stats()
-        total_vectors = stats['total_vector_count']
-        
-        if total_vectors == 0:
+        if stats['total_vector_count'] == 0:
             return []
-
         dummy_vector = [0.0] * 1536
         results = index.query(
             vector=dummy_vector,
@@ -128,7 +125,6 @@ def get_uploaded_files():
             include_metadata=True,
             include_values=False
         )
-
         files = set()
         for match in results.matches:
             if 'source' in match.metadata:
@@ -153,56 +149,52 @@ with st.expander("Show/hide details"):
 
 st.header("SFU Document Chatbot 2.0 (beta)")
 
-# Upload document
+# Initialize session state flags
+if "upload_complete" not in st.session_state:
+    st.session_state.upload_complete = False
+
+# --- File upload ---
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
-if uploaded_file:
-    with st.spinner("Processing document..."):
-        if uploaded_file.name.endswith(".pdf"):
-            texts = load_pdf(uploaded_file)
-        elif uploaded_file.name.endswith(".docx"):
-            texts = load_docx(uploaded_file)
-        else:
-            st.error("Unsupported file type.")
-            st.stop()
+if uploaded_file and not st.session_state.upload_complete:
+    with st.spinner(f"Uploading and processing '{uploaded_file.name}'... Please wait."):
+        try:
+            texts = load_pdf(uploaded_file) if uploaded_file.name.endswith(".pdf") else load_docx(uploaded_file)
+            chunks = split_text(texts)
+            clean_texts, embeddings = embed_texts(chunks)
+            if clean_texts and embeddings:
+                store_embeddings(clean_texts, embeddings, uploaded_file.name)
+                st.success(f"✅ '{uploaded_file.name}' uploaded and indexed!")
+                st.session_state.upload_complete = True
+            else:
+                st.error("⚠️ No valid text extracted from the uploaded document.")
+        except Exception as e:
+            st.error(f"Error during upload: {e}")
 
-        chunks = split_text(texts)
-        clean_texts, embeddings = embed_texts(chunks)
-        if clean_texts and embeddings:
-            store_embeddings(clean_texts, embeddings, uploaded_file.name)
-            st.success(f"Uploaded and indexed: {uploaded_file.name}")
-        else:
-            st.error("No valid text to embed from the uploaded document.")
-
-# Ask a question
+# --- Question box ---
 query = st.text_input("Ask a question about your documents:")
 
 if query:
     with st.spinner("Searching for answers..."):
         contexts = retrieve_contexts(query)
+        answer = generate_answer(contexts, query)
 
-        if contexts is None:
-            st.warning("⚠️ No relevant documents found. Please upload documents first.")
-        else:
-            answer = generate_answer(contexts, query)
+        st.write("### Answer:")
+        st.write(answer)
 
-            st.write("### Answer:")
-            st.write(answer)
+        with st.expander("See retrieved document sections"):
+            for i, context in enumerate(contexts):
+                st.write(f"**Section {i+1}:**\n{context}")
 
-            with st.expander("See retrieved document sections"):
-                for i, context in enumerate(contexts):
-                    st.write(f"**Section {i+1}:**\n{context}")
-
-# --- EXTRA TOOLS ---
 st.markdown("---")
 
-# Sidebar: Uploaded Files
+# --- Sidebar: Uploaded Files + Delete ---
+
 uploaded_files = get_uploaded_files()
 file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
 
 with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
     st.subheader("Uploaded Files")
-
     if isinstance(uploaded_files, str):
         st.error(uploaded_files)
     elif uploaded_files:
@@ -210,3 +202,19 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
             st.markdown(f"- {file}")
     else:
         st.info("No files found.")
+
+    st.markdown("---")
+    st.subheader("🗑️ Delete Uploaded File")
+
+    if isinstance(uploaded_files, list) and uploaded_files:
+        selected_file = st.selectbox("Select a file to delete:", uploaded_files)
+
+        if st.button(f"Confirm Delete '{selected_file}'"):
+            with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
+                try:
+                    index.delete(filter={"source": {"$eq": selected_file}})
+                    st.success(f"✅ Deleted all vectors for '{selected_file}'. Please refresh page.")
+                except Exception as e:
+                    st.error(f"Error deleting vectors: {e}")
+    else:
+        st.info("No files available to delete.")
