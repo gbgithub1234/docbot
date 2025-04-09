@@ -11,13 +11,13 @@ from uuid import uuid4
 # --- LOAD SECRETS ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
-PINECONE_ENVIRONMENT = st.secrets["PINECONE_ENVIRONMENT"]  # Make sure you have this secret too!
+PINECONE_ENVIRONMENT = st.secrets["PINECONE_ENVIRONMENT"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 
 # --- INITIALIZATION ---
 openai.api_key = OPENAI_API_KEY
 pinecone_client = pinecone.Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
-index = pinecone_client.Index(PINECONE_INDEX_NAME)  # ✅ Correct for Pinecone v3
+index = pinecone_client.Index(PINECONE_INDEX_NAME)
 
 EMBED_MODEL = "text-embedding-ada-002"
 
@@ -34,11 +34,14 @@ def load_docx(file: BytesIO):
 def split_text(texts, chunk_size=1000, chunk_overlap=100):
     chunks = []
     for text in texts:
-        start = 0
-        while start < len(text):
-            end = start + chunk_size
-            chunks.append(text[start:end])
-            start += chunk_size - chunk_overlap
+        if len(text) <= chunk_size:
+            chunks.append(text)
+        else:
+            start = 0
+            while start < len(text):
+                end = start + chunk_size
+                chunks.append(text[start:end])
+                start += chunk_size - chunk_overlap
     return chunks
 
 def embed_texts(texts):
@@ -67,7 +70,7 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
         safe_embeddings.append(embedding)
         safe_metadata.append({
             "source": source_name,
-            "text": text[:1000]  # Save first 1000 characters
+            "text": text[:1000]
         })
 
     vectors = [
@@ -79,10 +82,10 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
         for id_, embedding, meta in zip(ids, safe_embeddings, safe_metadata)
     ]
 
-    # Batch upserts using correct method
+    # Batch upserts
     for i in range(0, len(vectors), batch_size):
         batch = vectors[i:i+batch_size]
-        index.upsert(vectors=batch)  # ✅ Correct: use index.upsert()
+        index.upsert(vectors=batch)
 
 def retrieve_contexts(query, top_k=10):
     query_embed = openai.embeddings.create(
@@ -118,6 +121,13 @@ def view_all_vectors():
         return vectors_info
     except Exception as e:
         return str(e)
+
+def delete_all_vectors():
+    try:
+        index.delete(delete_all=True)
+        return "All vectors deleted successfully."
+    except Exception as e:
+        return f"Error deleting vectors: {e}"
 
 # --- STREAMLIT APP ---
 
@@ -160,8 +170,10 @@ if query:
             for i, context in enumerate(contexts):
                 st.write(f"**Section {i+1}:**\n{context}")
 
-# --- TEST CASE BUTTON ---
+# --- EXTRA TOOLS ---
 st.markdown("---")
+
+# View vectors button
 if st.button("🔍 View Test Case Vectors"):
     with st.spinner("Retrieving stored vector metadata..."):
         vectors_info = view_all_vectors()
@@ -171,3 +183,12 @@ if st.button("🔍 View Test Case Vectors"):
             st.write("### Stored Vectors Info:")
             for v in vectors_info:
                 st.json(v)
+
+# Delete all vectors button
+if st.button("🗑️ Delete All Vectors"):
+    with st.spinner("Deleting all vectors..."):
+        result = delete_all_vectors()
+        if "successfully" in result:
+            st.success(result)
+        else:
+            st.error(result)
