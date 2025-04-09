@@ -85,10 +85,8 @@ query = st.text_input("Ask a question about your documents:", key="user_query")
 # Button
 search_button = st.button("🔍 Search")
 
-# If user entered a query AND either pressed Enter or clicked the button
-if (query and search_button) or (query and not search_button and st.session_state.get("search_triggered") is None):
-    st.session_state["search_triggered"] = True  # Mark that we already triggered once
-
+# Unified search trigger: either pressing Enter OR clicking the button
+if query and (search_button or st.session_state.user_query != st.session_state.get("last_asked_query", "")):
     with st.spinner("Searching for answers..."):
         contexts, sources = retrieve_contexts(query)
 
@@ -106,9 +104,9 @@ if (query and search_button) or (query and not search_button and st.session_stat
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
-# Reset trigger if button pressed manually
-if search_button:
-    st.session_state["search_triggered"] = None
+    # Save last asked query
+    st.session_state["last_asked_query"] = query
+
 
 
 
