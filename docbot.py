@@ -77,9 +77,14 @@ with st.expander("Show/hide details"):
 st.header("SFU Document Chatbot 2.0 (beta)")
 
 # --- Question Box ---
-query = st.text_input("Ask a question about your documents:")
+st.markdown("**Press ENTER or click the Search button below** 👇")
 
-if query:
+query = st.text_input("Ask a question about your documents:", key="user_query")
+search_button = st.button("🔍 Search")
+
+if query and (search_button or st.session_state.get("user_query_submit", False)):
+    st.session_state["user_query_submit"] = False  # reset after processing
+
     with st.spinner("Searching for answers..."):
         contexts, sources = retrieve_contexts(query)
 
@@ -96,6 +101,11 @@ if query:
                     st.markdown(f"- {src}")
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
+
+# Support "press Enter" behavior
+if query and not search_button:
+    st.session_state["user_query_submit"] = True
+
 
 # --- Sidebar: Uploaded Files ---
 st.sidebar.title("📄 Uploaded Files")
