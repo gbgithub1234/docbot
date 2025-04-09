@@ -106,10 +106,11 @@ else:
 st.markdown("---")
 
 # --- Question box ---
-query = st.text_input("Ask a question about your uploaded documents:")
+st.text_input("Ask a question about your uploaded documents:", key="user_query")
 
-if query:
+if st.session_state.get("user_query"):  # Only proceed if there's a non-empty input
     with st.spinner("Searching for answers..."):
+        query = st.session_state["user_query"]
         contexts, sources = retrieve_contexts(query)
 
         if contexts:
@@ -122,12 +123,16 @@ if query:
                 "sources": sorted(set(sources))
             })
 
-            # 🛑 Clear the query so it doesn't resubmit on rerun
-            st.session_state["query"] = ""
+            # 🛑 Clear the input box
+            st.session_state["user_query"] = ""
 
             st.rerun()
+
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
+            # Even if no docs found, clear input
+            st.session_state["user_query"] = ""
+
 
 
 # --- Sidebar: Uploaded Files ---
