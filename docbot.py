@@ -243,11 +243,14 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True): 
         st.info("No files found.")
 
 
-# --- Sidebar: Delete a specific uploaded file ---
+# ------------------------------------------
+# Delete a specific uploaded file
+# ------------------------------------------
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("🗑️ Delete Uploaded File")
+st.markdown("---")
+st.subheader("🗑️ Delete Uploaded File")
 
+# Function to refresh uploaded files manually
 def refresh_uploaded_files():
     try:
         stats = index.describe_index_stats()
@@ -259,7 +262,7 @@ def refresh_uploaded_files():
         dummy_vector = [0.0] * 1536
         results = index.query(
             vector=dummy_vector,
-            top_k=min(total_vectors, 5000),
+            top_k=min(total_vectors, 5000),  # same large top_k as before
             include_metadata=True,
             include_values=False
         )
@@ -272,37 +275,26 @@ def refresh_uploaded_files():
     except Exception as e:
         return f"Error refreshing uploaded files: {e}"
 
-# Fetch fresh uploaded files again for delete section
-uploaded_files = get_uploaded_files()
-
+# Deleting logic
 if isinstance(uploaded_files, list) and uploaded_files:
-    selected_file = st.sidebar.selectbox("Select a file to delete:", uploaded_files)
+    selected_file = st.selectbox("Select a file to delete:", uploaded_files)
 
-    # First step: Confirm initial intention
-    if st.sidebar.button(f"Delete '{selected_file}'?"):
-        # Second step: Double-confirm
-        confirm = st.sidebar.radio(
-            "Are you absolutely sure?",
-            ("No", "Yes, delete it"),
-            index=0
-        )
-
-        if confirm == "Yes, delete it":
+    if st.button(f"Confirm Delete '{selected_file}'"):
+        with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
             try:
-                with st.spinner(f"Deleting all vectors from '{selected_file}'..."):
-                    index.delete(filter={"source": {"$eq": selected_file}})
-                    st.sidebar.success(f"✅ Deleted '{selected_file}' successfully.")
+                # Delete vectors with matching 'source'
+                index.delete(
+                    filter={"source": {"$eq": selected_file}}
+                )
+                st.success(f"Deleted all vectors for '{selected_file}' successfully.")
 
-                    # Refresh sidebar quietly
-                    uploaded_files = refresh_uploaded_files()
+                # Silent sidebar refresh
+                uploaded_files = refresh_uploaded_files()
 
-                    # Soft rerun app to update sidebar
-                    st.experimental_rerun()
             except Exception as e:
-                st.sidebar.error(f"Error deleting vectors: {e}")
+                st.error(f"Error deleting vectors: {e}")
 else:
-    st.sidebar.info("No files available to delete.")
-
+    st.info("No files available to delete.")
 
 
 
