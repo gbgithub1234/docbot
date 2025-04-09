@@ -88,9 +88,9 @@ if query:
             st.write("### Answer:")
             st.write(answer)
 
-            # with st.expander("See retrieved document sections"):
-            #     for i, context in enumerate(contexts):
-            #         st.write(f"**Section {i+1}:**\n{context}")
+            with st.expander("See retrieved document sections"):
+                for i, context in enumerate(contexts):
+                    st.write(f"**Section {i+1}:**\n{context}")
         else:
             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
