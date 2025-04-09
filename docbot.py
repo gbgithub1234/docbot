@@ -1,3 +1,5 @@
+# docbot.py
+
 import streamlit as st
 import openai
 import pinecone
@@ -105,33 +107,31 @@ def get_uploaded_files():
     except Exception as e:
         return f"Error retrieving uploaded files: {e}"
 
-# --- STREAMLIT APP SETUP ---
+# --- STREAMLIT APP ---
 
 st.set_page_config(page_title="DocBot", layout="wide")
 
-# Handle delete-triggered rerun reset
-if st.session_state.get("delete_triggered", False):
-    st.session_state.delete_triggered = False
-    st.session_state.query = ""
-    st.session_state.upload_complete = False
-
-# Top Introduction
+# Top introduction
 with st.expander("Show/hide details"):
     st.write("""
     - created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
-    - PROBLEM: Document-based information is scattered across locations.
-    - SOLUTION: Provide a single smart search for documents.
-    - Powered by [Pinecone vector storage](https://www.pinecone.io/)
-    - [Access sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
+    - PROBLEM: document-based information is located in many places taking time to find
+    - SOLUTION: provide a one-stop shopping resource for all document-based information
+    - Leverages AI and [Pinecone vector storage](https://www.pinecone.io/)
+    - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
     """)
 
 st.header("SFU Document Chatbot 2.0 (beta)")
 
-# Session state initialization
+# Initialize session state flags
 if "upload_complete" not in st.session_state:
     st.session_state.upload_complete = False
+if "delete_triggered" not in st.session_state:
+    st.session_state.delete_triggered = False
+if "query" not in st.session_state:
+    st.session_state.query = ""
 
-# --- File Upload ---
+# --- File upload ---
 uploaded_file = st.file_uploader("Upload a PDF or Word Document", type=["pdf", "docx"])
 
 if uploaded_file and not st.session_state.upload_complete:
@@ -149,24 +149,27 @@ if uploaded_file and not st.session_state.upload_complete:
         except Exception as e:
             st.error(f"Error during upload: {e}")
 
-# --- Ask a Question ---
-query = st.text_input("Ask a question about your documents:", key="query")
+# --- Question box ---
+query = st.text_input("Ask a question about your documents:", value=st.session_state.query, key="query")
 
 if query:
     with st.spinner("Searching for answers..."):
         contexts = retrieve_contexts(query)
-        answer = generate_answer(contexts, query)
+        if not contexts:
+            st.warning("⚠️ No relevant documents found. Please upload documents first.")
+        else:
+            answer = generate_answer(contexts, query)
+            st.write("### Answer:")
+            st.write(answer)
 
-        st.write("### Answer:")
-        st.write(answer)
-
-        with st.expander("See retrieved document sections"):
-            for i, context in enumerate(contexts):
-                st.write(f"**Section {i+1}:**\n{context}")
+            with st.expander("See retrieved document sections"):
+                for i, context in enumerate(contexts):
+                    st.write(f"**Section {i+1}:**\n{context}")
 
 st.markdown("---")
 
 # --- Sidebar: Uploaded Files + Delete ---
+
 uploaded_files = get_uploaded_files()
 file_count = len(uploaded_files) if isinstance(uploaded_files, list) else 0
 
@@ -191,16 +194,14 @@ with st.sidebar.expander(f"📄 Uploaded Files ({file_count})", expanded=True):
                 try:
                     index.delete(filter={"source": {"$eq": selected_file}})
                     st.success(f"✅ Deleted all vectors for '{selected_file}'.")
-
-                    # 🛠 NEW: Safely reset search state BEFORE rerun
-                    if "query" in st.session_state:
-                        del st.session_state["query"]
-                    if "upload_complete" in st.session_state:
-                        del st.session_state["upload_complete"]
-
                     st.session_state.delete_triggered = True
-                    st.rerun()  # ✅ Correct function
                 except Exception as e:
                     st.error(f"Error deleting vectors: {e}")
     else:
         st.info("No files available to delete.")
+
+# --- Handle Delete and Refresh ---
+if st.session_state.delete_triggered:
+    st.session_state.query = ""
+    st.session_state.delete_triggered = False
+    st.rerun()
