@@ -41,7 +41,6 @@ def split_text(texts, chunk_size=1000, chunk_overlap=100):
     return chunks
 
 def embed_texts(texts):
-    # Filter out empty texts before sending to OpenAI
     clean_texts = [text for text in texts if text.strip()]
     if not clean_texts:
         return [], []
@@ -79,11 +78,10 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
         for id_, embedding, meta in zip(ids, safe_embeddings, safe_metadata)
     ]
 
-    # Batch upserts
+    # Batch upserts using v3 method
     for i in range(0, len(vectors), batch_size):
         batch = vectors[i:i+batch_size]
-        index.upsert(vectors=batch, namespace="")  # <-- ADD namespace=""
-
+        index.vectors.upsert(vectors=batch)  # ✅ Correct: use index.vectors.upsert()
 
 def retrieve_contexts(query, top_k=10):
     query_embed = openai.embeddings.create(
