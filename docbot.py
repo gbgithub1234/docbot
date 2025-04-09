@@ -63,12 +63,12 @@ def store_embeddings(texts, embeddings, source_name, batch_size=50):
         for id_, embedding, meta in zip(ids, embeddings, metadata)
     ]
 
-    # Batch upserts to avoid payload errors
+    # Batch upserts
     for i in range(0, len(vectors), batch_size):
         batch = vectors[i:i+batch_size]
         index.upsert(vectors=batch)
 
-def retrieve_contexts(query, top_k=5):
+def retrieve_contexts(query, top_k=10):
     query_embed = openai.embeddings.create(
         input=[query],
         model=EMBED_MODEL
@@ -87,6 +87,22 @@ def generate_answer(contexts, query):
         messages=[{"role": "user", "content": prompt}]
     )
     return completion.choices[0].message.content
+
+def view_all_vectors():
+    try:
+        # Search with a random dummy vector to pull everything (brute force way)
+        dummy_vector = [0.0] * 1536
+        results = index.query(vector=dummy_vector, top_k=100, include_metadata=True, include_values=False)
+        vectors_info = [
+            {
+                "id": match.id,
+                "metadata": match.metadata
+            }
+            for match in results.matches
+        ]
+        return vectors_info
+    except Exception as e:
+        return str(e)
 
 # --- STREAMLIT APP ---
 
@@ -126,3 +142,15 @@ if query:
         with st.expander("See retrieved document sections"):
             for i, context in enumerate(contexts):
                 st.write(f"**Section {i+1}:**\n{context}")
+
+# --- TEST CASE BUTTON ---
+st.markdown("---")
+if st.button("🔍 View Test Case Vectors"):
+    with st.spinner("Retrieving stored vector metadata..."):
+        vectors_info = view_all_vectors()
+        if isinstance(vectors_info, str):
+            st.error(f"Error: {vectors_info}")
+        else:
+            st.write("### Stored Vectors Info:")
+            for v in vectors_info:
+                st.json(v)
