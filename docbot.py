@@ -75,7 +75,7 @@ with st.expander("Show/hide details"):
     """)
 
 #st.header("SFU Document Chatbot 2.0 (beta)")
-st.header("Docbot (prototype")
+st.header("Docbot")
 
 # --- Question Box ---
 
