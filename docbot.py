@@ -74,7 +74,8 @@ with st.expander("Show/hide details"):
     - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
     """)
 
-st.header("SFU Document Chatbot 2.0 (beta)")
+#st.header("SFU Document Chatbot 2.0 (beta)")
+st.header("Welcome to Docbot")
 
 # --- Question Box ---
 
