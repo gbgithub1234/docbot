@@ -62,7 +62,7 @@ def get_uploaded_files():
         return f"Error retrieving uploaded files: {e}"
 
 # --- Streamlit App Setup ---
-st.set_page_config(page_title="DocBot", layout="wide")
+st.set_page_config(page_title="DocBot (currently being upgraded)", layout="wide")
 
 # Top intro
 with st.expander("Show/hide details"):
@@ -103,26 +103,26 @@ search_button = st.button("🔍 Search")
 
 
 # Unified search trigger: either pressing Enter OR clicking the button
-if query and (search_button or st.session_state.user_query != st.session_state.get("last_asked_query", "")):
-    with st.spinner("Searching for answers..."):
-        contexts, sources = retrieve_contexts(query)
+# if query and (search_button or st.session_state.user_query != st.session_state.get("last_asked_query", "")):
+#     with st.spinner("Searching for answers..."):
+#         contexts, sources = retrieve_contexts(query)
 
-        if contexts:
-            answer = generate_answer(contexts, query)
+#         if contexts:
+#             answer = generate_answer(contexts, query)
 
-            st.write("### Answer:")
-            st.write(answer)
+#             st.write("### Answer:")
+#             st.write(answer)
 
-            if sources:
-                unique_sources = sorted(set(sources))
-                st.markdown("### 📄 Sources used:")
-                for src in unique_sources:
-                    st.markdown(f"- {src}")
-        else:
-            st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
+#             if sources:
+#                 unique_sources = sorted(set(sources))
+#                 st.markdown("### 📄 Sources used:")
+#                 for src in unique_sources:
+#                     st.markdown(f"- {src}")
+#         else:
+#             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
-    # Save last asked query
-    st.session_state["last_asked_query"] = query
+#     # Save last asked query
+#     st.session_state["last_asked_query"] = query
 
 
 
