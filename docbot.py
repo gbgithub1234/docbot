@@ -65,14 +65,14 @@ def get_uploaded_files():
 st.set_page_config(page_title="DocBot", layout="wide")
 
 # Top intro
-with st.expander("Show/hide details"):
-    st.write("""
-    - Created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
-    - PROBLEM: Document-based information is located in many places, taking time to find.
-    - SOLUTION: Provide a one-stop search for document-based information.
-    - Powered by AI and [Pinecone Vector Storage](https://www.pinecone.io/)
-    - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
-    """)
+# with st.expander("Show/hide details"):
+#     st.write("""
+#     - Created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
+#     - PROBLEM: Document-based information is located in many places, taking time to find.
+#     - SOLUTION: Provide a one-stop search for document-based information.
+#     - Powered by AI and [Pinecone Vector Storage](https://www.pinecone.io/)
+#     - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
+#     """)
 
 #st.header("SFU Document Chatbot 2.0 (beta)")
 st.header("Docbot - currently being upgraded")
