@@ -62,7 +62,7 @@ def get_uploaded_files():
         return f"Error retrieving uploaded files: {e}"
 
 # --- Streamlit App Setup ---
-st.set_page_config(page_title="DocBot (currently being upgraded)", layout="wide")
+st.set_page_config(page_title="DocBot", layout="wide")
 
 # Top intro
 with st.expander("Show/hide details"):
@@ -75,7 +75,7 @@ with st.expander("Show/hide details"):
     """)
 
 #st.header("SFU Document Chatbot 2.0 (beta)")
-st.header("Docbot")
+st.header("Docbot - currently being upgraded")
 
 # --- Question Box ---
 
@@ -98,7 +98,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Button
-search_button = st.button("🔍 Search")
+# search_button = st.button("🔍 Search")
 
 
 
