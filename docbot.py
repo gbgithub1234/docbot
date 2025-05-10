@@ -79,8 +79,8 @@ st.header("Docbot")
 
 # --- Question Box ---
 
-# Input box
-query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question here and press ENTER or the search button...")
+# Input box - temporarily disabled to save money
+# query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question here and press ENTER or the search button...")
 
 # Move instruction BELOW input
 # st.caption("👉 Press ENTER or click the Search button.")
