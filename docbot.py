@@ -65,25 +65,25 @@ def get_uploaded_files():
 st.set_page_config(page_title="DocBot", layout="wide")
 
 # Top intro
-# with st.expander("Show/hide details"):
-#     st.write("""
-#     - Created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
-#     - PROBLEM: Document-based information is located in many places, taking time to find.
-#     - SOLUTION: Provide a one-stop search for document-based information.
-#     - Powered by AI and [Pinecone Vector Storage](https://www.pinecone.io/)
-#     - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
-#     """)
+with st.expander("Show/hide details"):
+    st.write("""
+    - Created by Glen Brauer, Business Analyst in AAE (glenb@sfu.ca)
+    - PROBLEM: Document-based information is located in many places, taking time to find.
+    - SOLUTION: Provide a one-stop search for document-based information.
+    - Powered by AI and [Pinecone Vector Storage](https://www.pinecone.io/)
+    - Access [sample documents](https://drive.google.com/drive/u/0/folders/1gTD-OiqH5Bg3-ZqVuur9q8h-AGIzOlB7)
+    """)
 
-#st.header("SFU Document Chatbot 2.0 (beta)")
-st.header("Docbot - currently being upgraded")
+st.header("SFU Document Chatbot 2.0 (beta)")
+# st.header("Docbot - currently being upgraded")
 
 # --- Question Box ---
 
 # Input box - temporarily disabled to save money
-# query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question here and press ENTER or the search button...")
+query = st.text_input("Ask a question about your documents:", key="user_query", placeholder="Type your question here and press ENTER or the search button...")
 
 # Move instruction BELOW input
-# st.caption("👉 Press ENTER or click the Search button.")
+st.caption("👉 Press ENTER or click the Search button.")
 
 # Auto-focus (delayed to make it reliable)
 st.markdown("""
@@ -98,31 +98,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Button
-# search_button = st.button("🔍 Search")
+search_button = st.button("🔍 Search")
 
 
 
 # Unified search trigger: either pressing Enter OR clicking the button
-# if query and (search_button or st.session_state.user_query != st.session_state.get("last_asked_query", "")):
-#     with st.spinner("Searching for answers..."):
-#         contexts, sources = retrieve_contexts(query)
+if query and (search_button or st.session_state.user_query != st.session_state.get("last_asked_query", "")):
+    with st.spinner("Searching for answers..."):
+        contexts, sources = retrieve_contexts(query)
 
-#         if contexts:
-#             answer = generate_answer(contexts, query)
+        if contexts:
+            answer = generate_answer(contexts, query)
 
-#             st.write("### Answer:")
-#             st.write(answer)
+            st.write("### Answer:")
+            st.write(answer)
 
-#             if sources:
-#                 unique_sources = sorted(set(sources))
-#                 st.markdown("### 📄 Sources used:")
-#                 for src in unique_sources:
-#                     st.markdown(f"- {src}")
-#         else:
-#             st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
+            if sources:
+                unique_sources = sorted(set(sources))
+                st.markdown("### 📄 Sources used:")
+                for src in unique_sources:
+                    st.markdown(f"- {src}")
+        else:
+            st.warning("⚠️ No relevant documents found. Please upload documents first (admin).")
 
-#     # Save last asked query
-#     st.session_state["last_asked_query"] = query
+    # Save last asked query
+    st.session_state["last_asked_query"] = query
 
 
 
